@@ -55,7 +55,10 @@ func (c *Cache) Insert(key T, value V) {
 	}
 
 	freq.items[key] = struct{}{}
-	c.bykey[key] = newLFUItem(value, freq)
+	c.bykey[key] = &lfuItem{
+		data:   value,
+		parent: freq,
+	}
 }
 
 // Fetch fetches an element from the LFU cache, simultaneously incrementing its
@@ -104,14 +107,6 @@ func (c *Cache) Fetch(key T) V {
 type lfuItem struct {
 	data   V
 	parent *frequencyNode
-}
-
-// TODO(arl): useless function, since this is private, can build litteral directly
-func newLFUItem(data V, parent *frequencyNode) *lfuItem {
-	return &lfuItem{
-		data:   data,
-		parent: parent,
-	}
 }
 
 type frequencyNode struct {
