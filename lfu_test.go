@@ -131,7 +131,7 @@ func debug(c *Cache) {
 
 func (c *Cache) forEachFrequency(f func(freq int, s set)) {
 	cur := c.freqhead.next
-	// TODO(arl) don't know if the second check is normal (meaning that the linked list is circular)
+	// TODO(arl) should the frequency linked list really be circular?
 	for cur != nil && cur.next != c.freqhead.next {
 		f(int(cur.value), cur.items)
 		cur = cur.next

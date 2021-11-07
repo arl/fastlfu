@@ -16,17 +16,23 @@ type Cache struct {
 }
 
 func NewCache() *Cache {
-	c := &Cache{
-		bykey:    make(map[T]*lfuItem),
-		freqhead: newFreqNode(),
+	// Initialize the first frequency list.
+	node := &freqNode{
+		items: make(set),
 	}
+	node.prev = node
+	node.next = node
 
-	return c
+	return &Cache{
+		bykey:    make(map[T]*lfuItem),
+		freqhead: node,
+	}
 }
 
-// Evict evicts a single item from the list containing the least frequently used
-// items, and returns that item and a boolean set to true. If the cache is empty
-// and no item can be evicted, Evict returns the zero-value of T and false.
+// Evict evicts a single item from the cache, randomly chosen among the list of
+// least frequently used items, and returns that item and a boolean equals to
+// true. If the cache is empty and no item can be evicted, Evict returns the
+// zero-value of T and false.
 func (c *Cache) Evict() (T, bool) {
 	for k := range c.freqhead.next.items {
 		item := c.bykey[k]
@@ -58,7 +64,7 @@ func (c *Cache) Insert(key T, value V) {
 
 	freq := c.freqhead.next
 	if freq.value != 1 {
-		freq = getNewNode(1, c.freqhead, freq)
+		freq = newNode(1, c.freqhead, freq)
 	}
 
 	freq.items[key] = struct{}{}
@@ -98,7 +104,7 @@ func (c *Cache) Fetch(key T) V {
 	nextFreq := freq.next
 
 	if nextFreq == c.freqhead || nextFreq.value != freq.value+1 {
-		nextFreq = getNewNode(freq.value+1, freq, nextFreq)
+		nextFreq = newNode(freq.value+1, freq, nextFreq)
 	}
 	nextFreq.items[key] = struct{}{}
 	tmp.parent = nextFreq
@@ -122,22 +128,14 @@ type freqNode struct {
 	value      float64
 }
 
-// newFreqNode creates a new frequency node with an access frequency value of 0
-func newFreqNode() *freqNode {
-	n := &freqNode{
+// newNode creates a new frequency node and inserts it between prev and freq.
+func newNode(v float64, prev, next *freqNode) *freqNode {
+	nn := &freqNode{
 		items: make(set),
+		value: v,
+		prev:  prev,
+		next:  next,
 	}
-	n.prev = n
-	n.next = n
-	return n
-}
-
-// s/getNewNode/newNode
-func getNewNode(v float64, prev, next *freqNode) *freqNode {
-	nn := newFreqNode()
-	nn.value = v
-	nn.prev = prev
-	nn.next = next
 	prev.next = nn
 	next.prev = nn
 	return nn
