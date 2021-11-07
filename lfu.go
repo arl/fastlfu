@@ -36,7 +36,7 @@ func NewCache() *Cache {
 func (c *Cache) Evict() (T, bool) {
 	for k := range c.freqhead.next.items {
 		item := c.bykey[k]
-		unlink(item.parent)
+		item.parent.unlink()
 		delete(c.bykey, k)
 		return k, true
 	}
@@ -56,7 +56,7 @@ func (c *Cache) EvictMultiple(n int) int {
 	for evicted < n {
 		for k := range c.freqhead.next.items {
 			item := c.bykey[k]
-			unlink(item.parent)
+			item.parent.unlink()
 			delete(c.bykey, k)
 			evicted++
 		}
@@ -135,7 +135,7 @@ func (c *Cache) Fetch(key T) V {
 
 	delete(freq.items, key)
 	if len(freq.items) == 0 {
-		unlink(freq)
+		freq.unlink()
 	}
 
 	return tmp.data
@@ -165,7 +165,7 @@ func newNode(v float64, prev, next *freqNode) *freqNode {
 	return n
 }
 
-func unlink(n *freqNode) {
+func (n *freqNode) unlink() {
 	n.prev.next = n.next
 	n.next.prev = n.prev
 }
