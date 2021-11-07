@@ -12,13 +12,13 @@ type set map[T]struct{}
 
 type Cache struct {
 	bykey    map[T]*lfuItem
-	freqhead *frequencyNode
+	freqhead *freqNode
 }
 
 func NewCache() *Cache {
 	c := &Cache{
 		bykey:    make(map[T]*lfuItem),
-		freqhead: newFrequencyNode(),
+		freqhead: newFreqNode(),
 	}
 
 	return c
@@ -106,22 +106,18 @@ func (c *Cache) Fetch(key T) V {
 
 type lfuItem struct {
 	data   V
-	parent *frequencyNode
+	parent *freqNode
 }
 
-type frequencyNode struct {
-	next, prev *frequencyNode
+type freqNode struct {
+	next, prev *freqNode
 	items      set
 	value      float64
 }
 
-type frequencyList struct {
-	first, last *frequencyNode
-}
-
-// newFrequencyNode creates a new frequency node with an access frequency value of 0
-func newFrequencyNode() *frequencyNode {
-	n := &frequencyNode{
+// newFreqNode creates a new frequency node with an access frequency value of 0
+func newFreqNode() *freqNode {
+	n := &freqNode{
 		items: make(set),
 	}
 	n.prev = n
@@ -130,8 +126,8 @@ func newFrequencyNode() *frequencyNode {
 }
 
 // s/getNewNode/newNode
-func getNewNode(v float64, prev, next *frequencyNode) *frequencyNode {
-	nn := newFrequencyNode()
+func getNewNode(v float64, prev, next *freqNode) *freqNode {
+	nn := newFreqNode()
 	nn.value = v
 	nn.prev = prev
 	nn.next = next
@@ -140,7 +136,7 @@ func getNewNode(v float64, prev, next *frequencyNode) *frequencyNode {
 	return nn
 }
 
-func unlink(n *frequencyNode) {
+func unlink(n *freqNode) {
 	n.prev.next = n.next
 	n.next.prev = n.prev
 }
