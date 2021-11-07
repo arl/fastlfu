@@ -24,12 +24,19 @@ func NewCache() *Cache {
 	return c
 }
 
-// routine called GET-LFU-ITEM in the paper
-func (c *Cache) evictLFU() (T, *lfuItem) {
+// Evict evicts a single item from the list containing the least frequently used
+// items, and returns that item and a boolean set to true. If the cache is empty
+// and no item can be evicted, Evict returns the zero-value of T and false.
+func (c *Cache) Evict() (T, bool) {
 	for k := range c.freqhead.next.items {
-		return k, c.bykey[k]
+		item := c.bykey[k]
+		unlink(item.parent)
+		delete(c.bykey, k)
+		return k, true
 	}
-	panic("the cache is empty")
+
+	var t T
+	return t, false
 }
 
 /*

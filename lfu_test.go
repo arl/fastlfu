@@ -37,15 +37,15 @@ func TestFastLFU(t *testing.T) {
 
 	c.debugln("before first evict")
 
-	ek1, enode1 := c.evictLFU()
-	unlink(enode1.parent)
-	delete(c.bykey, ek1)
-	fmt.Println("evicted", ek1)
+	// TODO(arl) convert in propoer unit-tests
+	ev1, ok1 := c.Evict()
+	fmt.Printf("evicted? %t, item = %+v\n", ok1, ev1)
 
-	ek2, enode2 := c.evictLFU()
-	unlink(enode2.parent)
-	delete(c.bykey, ek2)
-	fmt.Println("evicted", ek2)
+	ev2, ok2 := c.Evict()
+	fmt.Printf("evicted? %t, item = %+v\n", ok2, ev2)
+
+	ev3, ok3 := c.Evict()
+	fmt.Printf("evicted? %t, item = %+v\n", ok3, ev3)
 }
 
 func testEvict(t *testing.T, nitems int) {
@@ -69,15 +69,10 @@ func testEvict(t *testing.T, nitems int) {
 			}
 		}
 		c.debugf("before eviction. (should evict %s)", keyFrom(i))
-		evicted, item := c.evictLFU()
-		if evicted != keyFrom(i) {
-			t.Fatalf("evicted %+v, want %+v", evicted, keyFrom(i))
+		evicted, ok := c.Evict()
+		if evicted != keyFrom(i) || !ok {
+			t.Fatalf("Evict() = (%+v, %t), want (%+v, %t)", evicted, ok, keyFrom(i), true)
 		}
-
-		// TODO(arl) -> this should probably be done in evictLFU if we kepe this public API
-		// untested
-		unlink(item.parent)
-		delete(c.bykey, evicted)
 
 		c.debugln("after successful eviction of", keyFrom(i))
 
@@ -101,43 +96,6 @@ func testEvict(t *testing.T, nitems int) {
 func TestEvict(t *testing.T) {
 	testEvict(t, 100)
 }
-
-/*
-func TestEvict(t *testing.T) {
-	c := NewCache()
-
-	for nitems := 1; nitems <= 10; nitems++ {
-		t.Log("~~~ nitems =", nitems, "~~~")
-		c.Insert(keyFrom(nitems), V(nitems))
-		for nfetches := 1; nfetches <= nitems; nfetches++ {
-			key := keyFrom(nfetches)
-			got := c.Fetch(key)
-			if got != V(nfetches) {
-				t.Errorf("Fetch(%q) = %v, want %v [nitems=%d]", key, got, nfetches, nitems)
-			}
-			t.Logf("[nitems=%d] Fetch(%q) = %v", nitems, key, got)
-		}
-
-		// key, item := c.evictLFU()
-		// fmt.Printf("key=%v item=%+v", key, item)
-		// c.debug("just created")
-
-		for nevicts := 0; nevicts < nitems; nevicts++ {
-			k, _ := c.evictLFU()
-			t.Logf("[nitems=%d] evicted -> %v %v/%v", nitems, k, nevicts, nitems)
-		}
-	}
-
-		// c.debug("just created")
-
-		// c.Insert(keyFrom(1), 1)
-		// c.debug("inserted key1/1")
-
-		// key, item := c.evictLFU()
-		// fmt.Printf("key=%v item=%+v", key, item)
-		// c.debug("just created")
-}
-*/
 
 func (c *Cache) debugln(a ...interface{}) {
 	if !testing.Verbose() {
