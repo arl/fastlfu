@@ -15,6 +15,11 @@ type Cache struct {
 	freqhead *freqNode
 }
 
+type lfuItem struct {
+	data   V
+	parent *freqNode // points back to the first node in the frequency list containing this lfuItem.
+}
+
 func NewCache() *Cache {
 	// Initialize the first frequency list.
 	node := &freqNode{
@@ -83,6 +88,7 @@ func (c *Cache) EvictMultiple(n int) int {
 func (c *Cache) Insert(key T, value V) {
 	_, ok := c.bykey[key]
 	if ok {
+		// TODO(arl) we shouldn't panic but probably just Fetch the item, and replace its value.
 		panic("Insert: key already exists")
 	}
 
@@ -119,9 +125,12 @@ func (c *Cache) Insert(key T, value V) {
 14 DELETE-NODE(freq)
 15 return tmp.data
 */
+
+// Fetch ...  TODO(arl) document
 func (c *Cache) Fetch(key T) V {
 	tmp := c.bykey[key]
 	if tmp == nil {
+		// TODO(arl) we shouldn't panic and return (_, false) instead.
 		panic("no such key")
 	}
 	freq := tmp.parent
@@ -141,15 +150,12 @@ func (c *Cache) Fetch(key T) V {
 	return tmp.data
 }
 
-type lfuItem struct {
-	data   V
-	parent *freqNode
-}
-
+// a freqNode is a node in the 'frequency list', it holds the items having the
+// same frequency (i.e. items with the same number of accesses).
 type freqNode struct {
-	next, prev *freqNode
-	items      set
-	value      float64
+	next, prev *freqNode // fequency list neighbour nodes.
+	items      set       // items
+	value      float64   // frequency value. TODO(arl) should be an integer
 }
 
 // newNode creates a new frequency node and inserts it between prev and freq.
@@ -165,6 +171,7 @@ func newNode(v float64, prev, next *freqNode) *freqNode {
 	return n
 }
 
+// unlink unlinks n from its own frequency list.
 func (n *freqNode) unlink() {
 	n.prev.next = n.next
 	n.next.prev = n.prev
