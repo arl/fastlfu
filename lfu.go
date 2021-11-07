@@ -45,6 +45,30 @@ func (c *Cache) Evict() (T, bool) {
 	return t, false
 }
 
+// EvictMultiple evicts up to n items from the cache, randomly chosen among the
+// least frequently used items, and returns the number of items actually
+// evicted.
+// TODO(arl) not tested yet
+func (c *Cache) EvictMultiple(n int) int {
+	evicted := 0
+
+	cur := c.freqhead.next
+	for evicted < n {
+		for k := range c.freqhead.next.items {
+			item := c.bykey[k]
+			unlink(item.parent)
+			delete(c.bykey, k)
+			evicted++
+		}
+		if cur == nil || cur.next == c.freqhead.next {
+			break
+		}
+		cur = cur.next
+	}
+
+	return evicted
+}
+
 /*
 01 if key in lfu cache.bykey then
 02 throw Exception(”Key already exists”)
