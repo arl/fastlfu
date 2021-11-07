@@ -154,15 +154,15 @@ type freqNode struct {
 
 // newNode creates a new frequency node and inserts it between prev and freq.
 func newNode(v float64, prev, next *freqNode) *freqNode {
-	nn := &freqNode{
+	n := &freqNode{
 		items: make(set),
 		value: v,
 		prev:  prev,
 		next:  next,
 	}
-	prev.next = nn
-	next.prev = nn
-	return nn
+	prev.next = n
+	next.prev = n
+	return n
 }
 
 func unlink(n *freqNode) {
