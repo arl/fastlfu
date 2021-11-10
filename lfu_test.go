@@ -23,10 +23,9 @@ func TestFastLFU(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		key := keyFrom(i)
-		v := c.Fetch(key)
-		fmt.Println(v)
-		if v != V(i) {
-			t.Errorf("Fetch(%q) = %v, want %v", key, v, i)
+		v, ok := c.Fetch(key)
+		if v != V(i) || !ok {
+			t.Errorf("Fetch(%q) = (%v, %t), want (%v, true)", key, v, ok, i)
 		}
 	}
 

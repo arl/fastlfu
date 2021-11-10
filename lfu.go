@@ -125,12 +125,14 @@ func (c *Cache) Insert(key T, value V) {
 15 return tmp.data
 */
 
-// Fetch ...  TODO(arl) document
-func (c *Cache) Fetch(key T) V {
+// Fetch returns the value associated with key and a boolean indicating if that
+// key exists. If it doesn't it returns the zero value of T and false.
+// Fetching a key increases its access frequency.
+func (c *Cache) Fetch(key T) (V, bool) {
 	tmp := c.bykey[key]
 	if tmp == nil {
-		// TODO(arl) we shouldn't panic and return (_, false) instead.
-		panic("no such key")
+		var v V
+		return v, false
 	}
 	freq := tmp.parent
 	nextFreq := freq.next
@@ -146,7 +148,7 @@ func (c *Cache) Fetch(key T) V {
 		freq.unlink()
 	}
 
-	return tmp.data
+	return tmp.data, true
 }
 
 // a freqNode is a node in the 'frequency list', it holds the items having the
