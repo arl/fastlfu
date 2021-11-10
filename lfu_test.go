@@ -97,6 +97,39 @@ func TestEvict(t *testing.T) {
 	testEvict(t, 100)
 }
 
+func TestEvictMultiple(t *testing.T) {
+	// c := buildCache(items []struct {
+	// 	v	int
+	// 	freq	int
+	// }{
+	// 	{1: 1},
+	// 	{2: 1},
+	// 	{3: 1};
+	// 	{4: 2},
+	// })
+	items := map[int]int{
+		1: 3,
+		2: 3,
+		3: 3,
+		4: 2,
+		5: 1,
+	}
+	c := buildCache(items)
+	c.debugln("just built")
+
+	c.Evict()
+	c.debugln("after evict")
+	c.EvictMultiple(1)
+	c.debugln("after evict multiple(1)")
+	c.forEachFrequency(func(freq int, s set) {
+		if len(s) != 3 {
+			t.Errorf("len(set) of frequency %v = %v, want %v", freq, len(s), 3)
+			fmt.Println(s)
+		}
+	})
+	// c.debugln()
+}
+
 func (c *Cache) debugln(a ...interface{}) {
 	if !testing.Verbose() {
 		return
@@ -136,4 +169,20 @@ func (c *Cache) forEachFrequency(f func(freq int, s set)) {
 		f(int(cur.value), cur.items)
 		cur = cur.next
 	}
+}
+
+// items is a map key is the cache key and value frequency.
+func buildCache(items map[int]int) *Cache {
+	c := NewCache()
+	for k, v := range items {
+		skey := keyFrom(k)
+		c.Insert(skey, V(k))
+		if v < 1 {
+			panic("an item can't have a frequency < 1")
+		}
+		for i := 1; i < v; i++ {
+			c.Fetch(skey)
+		}
+	}
+	return c
 }

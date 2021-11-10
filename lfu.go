@@ -53,7 +53,6 @@ func (c *Cache) Evict() (T, bool) {
 // EvictMultiple evicts up to n items from the cache, randomly chosen among the
 // least frequently used items, and returns the number of items actually
 // evicted.
-// TODO(arl) not tested yet
 func (c *Cache) EvictMultiple(n int) int {
 	evicted := 0
 
