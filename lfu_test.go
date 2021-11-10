@@ -165,7 +165,7 @@ func (c *Cache) forEachFrequency(f func(freq int, s set)) {
 	cur := c.freqhead.next
 	// TODO(arl) should the frequency linked list really be circular?
 	for cur != nil && cur.next != c.freqhead.next {
-		f(int(cur.value), cur.items)
+		f(int(cur.freq), cur.items)
 		cur = cur.next
 	}
 }

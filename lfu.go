@@ -92,7 +92,7 @@ func (c *Cache) Insert(key T, value V) {
 	}
 
 	freq := c.freqhead.next
-	if freq.value != 1 {
+	if freq.freq != 1 {
 		freq = newNode(1, c.freqhead, freq)
 	}
 
@@ -137,8 +137,8 @@ func (c *Cache) Fetch(key T) (V, bool) {
 	freq := tmp.parent
 	nextFreq := freq.next
 
-	if nextFreq == c.freqhead || nextFreq.value != freq.value+1 {
-		nextFreq = newNode(freq.value+1, freq, nextFreq)
+	if nextFreq == c.freqhead || nextFreq.freq != freq.freq+1 {
+		nextFreq = newNode(freq.freq+1, freq, nextFreq)
 	}
 	nextFreq.items[key] = struct{}{}
 	tmp.parent = nextFreq
@@ -156,14 +156,14 @@ func (c *Cache) Fetch(key T) (V, bool) {
 type freqNode struct {
 	next, prev *freqNode // fequency list neighbour nodes.
 	items      set       // items
-	value      float64   // frequency value. TODO(arl) should be an integer
+	freq       uint64    // number of accesses
 }
 
 // newNode creates a new frequency node and inserts it between prev and freq.
-func newNode(v float64, prev, next *freqNode) *freqNode {
+func newNode(v uint64, prev, next *freqNode) *freqNode {
 	n := &freqNode{
 		items: make(set),
-		value: v,
+		freq:  v,
 		prev:  prev,
 		next:  next,
 	}
