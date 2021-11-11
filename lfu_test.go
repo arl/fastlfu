@@ -2,6 +2,7 @@ package fastlfu
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -96,16 +97,13 @@ func TestEvict(t *testing.T) {
 	testEvict(t, 100)
 }
 
+type evictMultipleTestCase struct {
+	items      map[int]int
+	nevictions int
+	want       map[T]V
+}
+
 func TestEvictMultiple(t *testing.T) {
-	// c := buildCache(items []struct {
-	// 	v	int
-	// 	freq	int
-	// }{
-	// 	{1: 1},
-	// 	{2: 1},
-	// 	{3: 1};
-	// 	{4: 2},
-	// })
 	items := map[int]int{
 		1: 3,
 		2: 3,
@@ -113,20 +111,23 @@ func TestEvictMultiple(t *testing.T) {
 		4: 2,
 		5: 1,
 	}
-	c := buildCache(items)
-	c.debugln("just built")
+	want := map[T]V{
+		keyFrom(1): 1,
+		keyFrom(2): 2,
+		keyFrom(3): 3,
+	}
+	testEvictMultiple(t, items, 2, want)
+}
 
-	c.Evict()
-	c.debugln("after evict")
-	c.EvictMultiple(1)
-	c.debugln("after evict multiple(1)")
-	c.forEachFrequency(func(freq int, s set) {
-		if len(s) != 3 {
-			t.Errorf("len(set) of frequency %v = %v, want %v", freq, len(s), 3)
-			fmt.Println(s)
-		}
-	})
-	// c.debugln()
+func testEvictMultiple(t *testing.T, items map[int]int, nevictions int, want map[T]V) {
+	t.Helper()
+
+	c := buildCache(items)
+	/*evicted := */ c.EvictMultiple(nevictions)
+
+	if got := c.items(); !reflect.DeepEqual(got, want) {
+		t.Errorf("%d evictions, got:\n%+v\n\nwant:\n%+v\n", nevictions, got, want)
+	}
 }
 
 func (c *Cache) debugln(a ...interface{}) {
@@ -168,6 +169,14 @@ func (c *Cache) forEachFrequency(f func(freq int, s set)) {
 		f(int(cur.freq), cur.items)
 		cur = cur.next
 	}
+}
+
+func (c *Cache) items() map[T]V {
+	m := make(map[T]V)
+	for k, v := range c.bykey {
+		m[k] = v.data
+	}
+	return m
 }
 
 // items is a map key is the cache key and value frequency.

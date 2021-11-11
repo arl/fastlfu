@@ -64,10 +64,10 @@ func (c *Cache) EvictMultiple(n int) int {
 			delete(c.bykey, k)
 			evicted++
 		}
+		cur = cur.next
 		if cur == nil || cur.next == c.freqhead.next {
 			break
 		}
-		cur = cur.next
 	}
 
 	return evicted
