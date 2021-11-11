@@ -98,35 +98,111 @@ func TestEvict(t *testing.T) {
 }
 
 type evictMultipleTestCase struct {
-	items      map[int]int
-	nevictions int
-	want       map[T]V
+	name        string
+	freqs       map[int]int // state the cache should be for the test (key=>frequency)
+	nevictions  int         // number of evictions to perform with EvictMultiple
+	wantItems   []int       // the keys we want in the cache after evcitions
+	wantEvicted int         // number of actual evictions performed by EvictMultiple
 }
 
 func TestEvictMultiple(t *testing.T) {
-	items := map[int]int{
-		1: 3,
-		2: 3,
-		3: 3,
-		4: 2,
-		5: 1,
+	tests := []evictMultipleTestCase{
+		{
+			name: "evict 1 key",
+			freqs: map[int]int{
+				1: 3,
+				2: 3,
+				3: 3,
+				4: 2,
+				5: 1,
+			},
+			nevictions:  1,
+			wantEvicted: 1,
+			wantItems:   []int{1, 2, 3, 4},
+		},
+		{
+			name: "evict 2 keys",
+			freqs: map[int]int{
+				1: 3,
+				2: 3,
+				3: 3,
+				4: 2,
+				5: 1,
+			},
+			nevictions:  2,
+			wantEvicted: 2,
+			wantItems:   []int{1, 2, 3},
+		},
+		{
+			name:        "try evict on empty cache",
+			freqs:       map[int]int{},
+			nevictions:  1,
+			wantEvicted: 0,
+			wantItems:   []int{},
+		},
+		{
+			name: "evict nothing",
+			freqs: map[int]int{
+				1: 3,
+				2: 3,
+				3: 3,
+				4: 2,
+				5: 1,
+			},
+			nevictions:  0,
+			wantEvicted: 0,
+			wantItems:   []int{1, 2, 3, 4, 5},
+		},
+		{
+			name: "evict everything",
+			freqs: map[int]int{
+				1: 3,
+				2: 3,
+				3: 3,
+				4: 2,
+				5: 1,
+			},
+			nevictions:  5,
+			wantEvicted: 5,
+			wantItems:   []int{},
+		},
+		{
+			name: "evict everything",
+			freqs: map[int]int{
+				1: 3,
+				2: 3,
+				3: 3,
+				4: 2,
+				5: 1,
+			},
+			nevictions:  10,
+			wantEvicted: 5,
+			wantItems:   []int{},
+		},
 	}
-	want := map[T]V{
-		keyFrom(1): 1,
-		keyFrom(2): 2,
-		keyFrom(3): 3,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEvictMultiple(t, tt)
+		})
 	}
-	testEvictMultiple(t, items, 2, want)
 }
 
-func testEvictMultiple(t *testing.T, items map[int]int, nevictions int, want map[T]V) {
+func testEvictMultiple(t *testing.T, tt evictMultipleTestCase) {
 	t.Helper()
 
-	c := buildCache(items)
-	/*evicted := */ c.EvictMultiple(nevictions)
+	c := buildCache(tt.freqs)
+	evicted := c.EvictMultiple(tt.nevictions)
 
+	if evicted != tt.wantEvicted {
+		t.Errorf("items evicted = %d, want %d", evicted, tt.wantEvicted)
+	}
+
+	want := make(map[T]V)
+	for _, i := range tt.wantItems {
+		want[keyFrom(i)] = V(i)
+	}
 	if got := c.items(); !reflect.DeepEqual(got, want) {
-		t.Errorf("%d evictions, got:\n%+v\n\nwant:\n%+v\n", nevictions, got, want)
+		t.Errorf("got:\n%+v\n\nwant:\n%+v\n", got, want)
 	}
 }
 
