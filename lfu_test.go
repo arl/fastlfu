@@ -3,14 +3,11 @@ package fastlfu
 import (
 	"fmt"
 	"reflect"
-	"sort"
-	"strconv"
-	"strings"
 	"testing"
 )
 
 func keyFrom(i int) T {
-	return T("key" + strconv.Itoa(i))
+	return T(i)
 }
 
 func TestFastLFU(t *testing.T) {
@@ -229,12 +226,11 @@ func (c *Cache) debugf(format string, a ...interface{}) {
 
 func debug(c *Cache) {
 	c.forEachFrequency(func(freq int, s set) {
-		var ss []string
+		var sl []T
 		for k := range s {
-			ss = append(ss, string(k))
+			sl = append(sl, k)
 		}
-		sort.Strings(ss)
-		fmt.Printf("\tfreq=%d -> {%s}\n", freq, strings.Join(ss, ", "))
+		fmt.Printf("\tfreq=%d -> {%+v}\n", freq, sl)
 	})
 }
 

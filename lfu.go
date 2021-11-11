@@ -4,7 +4,7 @@ package fastlfu
  *
  */
 
-type T string
+type T int
 
 type V int
 
