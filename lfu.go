@@ -103,9 +103,6 @@ func (c *Cache) Insert(key T, value V) {
 	}
 }
 
-// Fetch fetches an element from the LFU cache, simultaneously incrementing its
-// frequency.
-
 /*
 01 tmp ← lfu cache.bykey[key]
 02 if tmp equals null then
@@ -125,9 +122,9 @@ func (c *Cache) Insert(key T, value V) {
 15 return tmp.data
 */
 
-// Fetch returns the value associated with key and a boolean indicating if that
-// key exists. If it doesn't it returns the zero value of T and false.
-// Fetching a key increases its access frequency.
+// Fetch fetches the value associated with key and returns it, with true, and
+// increments its access frequency. However if there's no such key in the cache,
+// it returns the zero value of the value type and false.
 func (c *Cache) Fetch(key T) (V, bool) {
 	tmp := c.bykey[key]
 	if tmp == nil {
