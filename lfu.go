@@ -41,8 +41,12 @@ func NewCache() *Cache {
 func (c *Cache) Evict() (T, bool) {
 	for k := range c.freqhead.next.items {
 		item := c.bykey[k]
-		item.parent.unlink()
+		if len(c.freqhead.next.items) == 1 {
+			// No other elements having the current frequency
+			item.parent.unlink()
+		}
 		delete(c.bykey, k)
+		delete(c.freqhead.next.items, k)
 		return k, true
 	}
 

@@ -94,6 +94,33 @@ func TestEvict(t *testing.T) {
 	testEvict(t, 100)
 }
 
+func testEvictSameFrequencies(nitems int) func(t *testing.T) {
+	return func(t *testing.T) {
+		c := NewCache()
+		for i := 0; i < nitems; i++ {
+			c.Insert(keyFrom(i), V(i))
+		}
+		// We can successfully evict nitems times
+		for i := 0; i < nitems; i++ {
+			if evc, ok := c.Evict(); !ok {
+				t.Errorf("%dth Evict() -> (%v, %v), want (_, true)", i, evc, ok)
+			}
+		}
+
+		// No more evictions possible
+		if evc, ok := c.Evict(); ok {
+			t.Errorf("last Evict() -> (%v, %v), want (_, false)", evc, ok)
+		}
+	}
+}
+
+func TestEvictSameFrequencies(t *testing.T) {
+	t.Run("1", testEvictSameFrequencies(1))
+	t.Run("10", testEvictSameFrequencies(10))
+	t.Run("100", testEvictSameFrequencies(100))
+	t.Run("1000", testEvictSameFrequencies(1000))
+}
+
 type evictMultipleTestCase struct {
 	name        string
 	freqs       map[int]int // state the cache should be for the test (key=>frequency)
