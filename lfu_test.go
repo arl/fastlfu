@@ -293,3 +293,68 @@ func buildCache(items map[int]int) *Cache {
 	}
 	return c
 }
+
+func BenchmarkInsert(b *testing.B) {
+	c := NewCache()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		c.Insert(T(n), V(n))
+	}
+}
+
+func benchmarkFetch(nitems int, hit bool) func(b *testing.B) {
+	return func(b *testing.B) {
+		var key T
+		if hit {
+			key = T(0)
+		} else {
+			key = T(nitems)
+		}
+
+		c := NewCache()
+		for i := 0; i < nitems; i++ {
+			c.Insert(T(i), V(i))
+		}
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		for n := 0; n < b.N; n++ {
+			v, ok := c.Fetch(key)
+			_, _ = v, ok
+			if ok != hit {
+				b.Fatalf("Fetch(%v) = (%v, %t), want %t", key, v, ok, hit)
+			}
+		}
+	}
+}
+
+func BenchmarkFetch(b *testing.B) {
+	b.Run("items=10/fetch=hit", benchmarkFetch(10, true))
+	b.Run("items=10/fetch=miss", benchmarkFetch(10, false))
+	b.Run("items=100/fetch=hit", benchmarkFetch(100, true))
+	b.Run("items=100/fetch=miss", benchmarkFetch(100, false))
+	b.Run("items=1000/fetch=hit", benchmarkFetch(1000, true))
+	b.Run("items=1000/fetch=miss", benchmarkFetch(1000, false))
+	b.Run("items=10000/fetch=hit", benchmarkFetch(10000, true))
+	b.Run("items=10000/fetch=miss", benchmarkFetch(10000, false))
+	b.Run("items=100000/fetch=hit", benchmarkFetch(100000, true))
+	b.Run("items=100000/fetch=miss", benchmarkFetch(100000, false))
+}
+
+func BenchmarkEvict(b *testing.B) {
+	c := NewCache()
+	for i := 0; i < b.N; i++ {
+		c.Insert(T(i), V(i))
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		v, ok := c.Evict()
+		_, _ = v, ok
+		if !ok {
+			b.Fatalf("Evict() = false, want true")
+		}
+	}
+}
