@@ -4,6 +4,33 @@ package fastlfu
 
 type set[K comparable] map[K]struct{}
 
+// a freqNode is a node in the 'frequency list', it holds the items having the
+// same frequency (i.e. items with the same number of accesses).
+type freqNode[T comparable] struct {
+	next, prev *freqNode[T] // fequency list neighbour nodes.
+	items      set[T]       // items
+	freq       uint64       // number of accesses
+}
+
+// newNode creates a new frequency node and inserts it between prev and freq.
+func newNode[T comparable](v uint64, prev, next *freqNode[T]) *freqNode[T] {
+	n := &freqNode[T]{
+		items: make(set[T]),
+		freq:  v,
+		prev:  prev,
+		next:  next,
+	}
+	prev.next = n
+	next.prev = n
+	return n
+}
+
+// unlink unlinks n from its own frequency list.
+func (n *freqNode[T]) unlink() {
+	n.prev.next = n.next
+	n.next.prev = n.prev
+}
+
 type Cache[K comparable, V any] struct {
 	bykey    map[K]*lfuItem[K, V]
 	freqhead *freqNode[K]
@@ -149,31 +176,4 @@ func (c *Cache[K, V]) Fetch(key K) (V, bool) {
 	}
 
 	return tmp.data, true
-}
-
-// a freqNode is a node in the 'frequency list', it holds the items having the
-// same frequency (i.e. items with the same number of accesses).
-type freqNode[T comparable] struct {
-	next, prev *freqNode[T] // fequency list neighbour nodes.
-	items      set[T]       // items
-	freq       uint64       // number of accesses
-}
-
-// newNode creates a new frequency node and inserts it between prev and freq.
-func newNode[T comparable](v uint64, prev, next *freqNode[T]) *freqNode[T] {
-	n := &freqNode[T]{
-		items: make(set[T]),
-		freq:  v,
-		prev:  prev,
-		next:  next,
-	}
-	prev.next = n
-	next.prev = n
-	return n
-}
-
-// unlink unlinks n from its own frequency list.
-func (n *freqNode[T]) unlink() {
-	n.prev.next = n.next
-	n.next.prev = n.prev
 }
