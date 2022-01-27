@@ -103,21 +103,13 @@ func (c *Cache[K, V]) EvictMultiple(n int) int {
 	return evicted
 }
 
-/*
-01 if key in lfu cache.bykey then
-02 throw Exception(”Key already exists”)
-03
-04 freq ← lfu cache.freq head.next
-05 if freq.value does not equal 1 then
-06 freq ← GET-NEW-NODE(1, lfu cache.freq head, freq)
-07
-08 freq.items.add(key)
-09 lfu cache.bykey[key] ← NEW-LFU-ITEM(value, freq)
-*/
+// Insert a key value pair in the cache.
+// NOTE: for now this panics if the key already exist.
 func (c *Cache[K, V]) Insert(key K, value V) {
 	_, ok := c.bykey[key]
 	if ok {
-		// TODO(arl) we shouldn't panic but probably just Fetch the item, and replace its value.
+		// TODO(arl) we shouldn't panic but probably just Fetch the item, and
+		// replace its value.
 		panic("Insert: key already exists")
 	}
 
@@ -133,26 +125,7 @@ func (c *Cache[K, V]) Insert(key K, value V) {
 	}
 }
 
-/*
-01 tmp ← lfu cache.bykey[key]
-02 if tmp equals null then
-03 throw Exception(”No such key”)
-04 freq ← tmp.parent
-05 next freq ← freq.next
-06
-07 if next freq equals lfu cache.freq head or
-08 next freq.value does not equal freq.value + 1 then
-08 next freq ← GET-NEW-NODE(freq.value + 1, freq, next freq)
-09 next freq.items.add(key)
-10 tmp.parent ← next freq
-11
-12 freq.items.remove(key)
-13 if freq.items.length equals 0 then
-14 DELETE-NODE(freq)
-15 return tmp.data
-*/
-
-// Fetch fetches the value associated with key and returns it, with true, and
+// Fetch fetches the value associated with a key and returns it, with true, and
 // increments its access frequency. However if there's no such key in the cache,
 // it returns the zero value of the value type and false.
 func (c *Cache[K, V]) Fetch(key K) (V, bool) {
