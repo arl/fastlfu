@@ -34,6 +34,11 @@ func NewCache() *Cache {
 	}
 }
 
+// Len returns the number of elements in the cache.
+func (c *Cache) Len() int {
+	return len(c.bykey)
+}
+
 // Evict evicts a single item from the cache, randomly chosen among the list of
 // least frequently used items, and returns that item and a boolean equals to
 // true. If the cache is empty and no item can be evicted, Evict returns the
