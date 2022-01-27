@@ -6,87 +6,84 @@ import (
 	"testing"
 )
 
-func keyFrom(i int) T {
-	return T(i)
-}
-
 func TestFastLFU(t *testing.T) {
-	c := NewCache()
+	c := NewCache[int, int]()
 
 	for i := 0; i < 10; i++ {
-		key := keyFrom(i)
-		val := V(i)
-		c.Insert(key, val)
+		c.Insert(i, i)
 	}
 
 	for i := 0; i < 10; i++ {
-		key := keyFrom(i)
-		v, ok := c.Fetch(key)
-		if v != V(i) || !ok {
-			t.Errorf("Fetch(%q) = (%v, %t), want (%v, true)", key, v, ok, i)
+		v, ok := c.Fetch(i)
+		if v != i || !ok {
+			t.Errorf("Fetch(%q) = (%v, %t), want (%v, true)", i, v, ok, i)
 		}
 	}
 
 	for i := 0; i < 7; i++ {
-		key := keyFrom(i)
-		c.Fetch(key)
+		c.Fetch(i)
 	}
 
 	c.debugln("before first evict")
 
-	// TODO(arl) convert in propoer unit-tests
+	// TODO convert in propoer unit-tests
 	ev1, ok1 := c.Evict()
-	fmt.Printf("evicted? %t, item = %+v\n", ok1, ev1)
+	if testing.Verbose() {
+		fmt.Printf("evicted? %t, item = %+v\n", ok1, ev1)
+	}
 
 	ev2, ok2 := c.Evict()
-	fmt.Printf("evicted? %t, item = %+v\n", ok2, ev2)
+	if testing.Verbose() {
+		fmt.Printf("evicted? %t, item = %+v\n", ok2, ev2)
+	}
 
 	ev3, ok3 := c.Evict()
-	fmt.Printf("evicted? %t, item = %+v\n", ok3, ev3)
+	if testing.Verbose() {
+		fmt.Printf("evicted? %t, item = %+v\n", ok3, ev3)
+	}
 }
 
 func testEvict(t *testing.T, nitems int) {
-	c := NewCache()
+	c := NewCache[int, int]()
 
 	for i := 0; i < nitems; i++ {
-		c.Insert(keyFrom(i), V(i))
+		c.Insert(i, i)
 	}
 
 	c.debugln("after insertions")
 
 	// We want to force eviction of the ith element
 	for i := 0; i < nitems; i++ {
-		t.Log("in this loop, we want to evict", keyFrom(i))
+		t.Log("in this loop, we want to evict", i)
 		// We fetch all elements but the ith element
 		for f := 0; f < nitems; f++ {
 			if f != i {
-				k := keyFrom(f)
-				c.Fetch(k)
-				c.debugf("after fetch(%s)", k)
+				c.Fetch(f)
+				c.debugf("after fetch(%s)", f)
 			}
 		}
-		c.debugf("before eviction. (should evict %s)", keyFrom(i))
+		c.debugf("before eviction. (should evict %s)", i)
 		evicted, ok := c.Evict()
-		if evicted != keyFrom(i) || !ok {
-			t.Fatalf("Evict() = (%+v, %t), want (%+v, %t)", evicted, ok, keyFrom(i), true)
+		if evicted != i || !ok {
+			t.Fatalf("Evict() = (%+v, %t), want (%+v, %t)", evicted, ok, i, true)
 		}
 
-		c.debugln("after successful eviction of", keyFrom(i))
+		c.debugln("after successful eviction of", i)
 
 		// We now reinsert the evicted element, and we artifically fetch it a
 		// number a times so that it gets the same frequency as every other
 		// element in the cache.
-		c.Insert(keyFrom(i), V(i))
+		c.Insert(i, i)
 
 		tot := 1
 		for j := 0; j <= i; j++ {
 			tot += j
 		}
 		for j := 0; j < tot; j++ {
-			c.Fetch(keyFrom(i))
+			c.Fetch(i)
 		}
 
-		c.debugln("after re-insertion of", keyFrom(i))
+		c.debugln("after re-insertion of", i)
 	}
 }
 
@@ -96,9 +93,9 @@ func TestEvict(t *testing.T) {
 
 func testEvictSameFrequencies(nitems int) func(t *testing.T) {
 	return func(t *testing.T) {
-		c := NewCache()
+		c := NewCache[int, int]()
 		for i := 0; i < nitems; i++ {
-			c.Insert(keyFrom(i), V(i))
+			c.Insert(i, i)
 		}
 		// We can successfully evict nitems times
 		for i := 0; i < nitems; i++ {
@@ -125,7 +122,7 @@ type evictMultipleTestCase struct {
 	name        string
 	freqs       map[int]int // state the cache should be for the test (key=>frequency)
 	nevictions  int         // number of evictions to perform with EvictMultiple
-	wantItems   []int       // the keys we want in the cache after evcitions
+	wantItems   map[int]int // expected content in cache after all evictions
 	wantEvicted int         // number of actual evictions performed by EvictMultiple
 }
 
@@ -142,7 +139,7 @@ func TestEvictMultiple(t *testing.T) {
 			},
 			nevictions:  1,
 			wantEvicted: 1,
-			wantItems:   []int{1, 2, 3, 4},
+			wantItems:   map[int]int{1: 3, 2: 3, 3: 3, 4: 2},
 		},
 		{
 			name: "evict 2 keys",
@@ -155,14 +152,14 @@ func TestEvictMultiple(t *testing.T) {
 			},
 			nevictions:  2,
 			wantEvicted: 2,
-			wantItems:   []int{1, 2, 3},
+			wantItems:   map[int]int{1: 3, 2: 3, 3: 3},
 		},
 		{
 			name:        "try evict on empty cache",
 			freqs:       map[int]int{},
 			nevictions:  1,
 			wantEvicted: 0,
-			wantItems:   []int{},
+			wantItems:   map[int]int{},
 		},
 		{
 			name: "evict nothing",
@@ -175,7 +172,7 @@ func TestEvictMultiple(t *testing.T) {
 			},
 			nevictions:  0,
 			wantEvicted: 0,
-			wantItems:   []int{1, 2, 3, 4, 5},
+			wantItems:   map[int]int{1: 3, 2: 3, 3: 3, 4: 2, 5: 1},
 		},
 		{
 			name: "evict everything",
@@ -188,7 +185,7 @@ func TestEvictMultiple(t *testing.T) {
 			},
 			nevictions:  5,
 			wantEvicted: 5,
-			wantItems:   []int{},
+			wantItems:   map[int]int{},
 		},
 		{
 			name: "evict everything",
@@ -201,7 +198,7 @@ func TestEvictMultiple(t *testing.T) {
 			},
 			nevictions:  10,
 			wantEvicted: 5,
-			wantItems:   []int{},
+			wantItems:   map[int]int{},
 		},
 	}
 	for _, tt := range tests {
@@ -214,46 +211,42 @@ func TestEvictMultiple(t *testing.T) {
 func testEvictMultiple(t *testing.T, tt evictMultipleTestCase) {
 	t.Helper()
 
-	c := buildCache(tt.freqs)
+	c := buildCache(tt.freqs, tt.freqs)
 	evicted := c.EvictMultiple(tt.nevictions)
 
 	if evicted != tt.wantEvicted {
 		t.Errorf("items evicted = %d, want %d", evicted, tt.wantEvicted)
 	}
 
-	want := make(map[T]V)
-	for _, i := range tt.wantItems {
-		want[keyFrom(i)] = V(i)
-	}
-	if got := c.items(); !reflect.DeepEqual(got, want) {
-		t.Errorf("got:\n%+v\n\nwant:\n%+v\n", got, want)
+	if got := c.items(); !reflect.DeepEqual(got, tt.wantItems) {
+		t.Errorf("got:\n%+v\n\nwant:\n%+v\n", got, tt.wantItems)
 	}
 }
 
-func (c *Cache) debugln(a ...interface{}) {
+func (c *Cache[K, V]) debugln(a ...interface{}) {
 	if !testing.Verbose() {
 		return
 	}
 
 	a = append(a, ":")
 	fmt.Println(a...)
-	debug(c)
+	c.debug()
 	fmt.Println()
 }
 
-func (c *Cache) debugf(format string, a ...interface{}) {
+func (c *Cache[K, V]) debugf(format string, a ...interface{}) {
 	if !testing.Verbose() {
 		return
 	}
 
 	fmt.Printf(format+" :\n", a...)
-	debug(c)
+	c.debug()
 	fmt.Println()
 }
 
-func debug(c *Cache) {
-	c.forEachFrequency(func(freq int, s set) {
-		var sl []T
+func (c *Cache[K, V]) debug() {
+	c.forEachFrequency(func(freq int, s set[K]) {
+		var sl []K
 		for k := range s {
 			sl = append(sl, k)
 		}
@@ -261,7 +254,7 @@ func debug(c *Cache) {
 	})
 }
 
-func (c *Cache) forEachFrequency(f func(freq int, s set)) {
+func (c *Cache[K, V]) forEachFrequency(f func(freq int, s set[K])) {
 	cur := c.freqhead.next
 	// TODO(arl) should the frequency linked list really be circular?
 	for cur != nil && cur.next != c.freqhead.next {
@@ -270,8 +263,8 @@ func (c *Cache) forEachFrequency(f func(freq int, s set)) {
 	}
 }
 
-func (c *Cache) items() map[T]V {
-	m := make(map[T]V)
+func (c *Cache[K, V]) items() map[K]V {
+	m := make(map[K]V)
 	for k, v := range c.bykey {
 		m[k] = v.data
 	}
@@ -279,42 +272,43 @@ func (c *Cache) items() map[T]V {
 }
 
 // items is a map key is the cache key and value frequency.
-func buildCache(items map[int]int) *Cache {
-	c := NewCache()
+func buildCache[K comparable, V any](items map[K]V, freqs map[K]int) *Cache[K, V] {
+	c := NewCache[K, V]()
 	for k, v := range items {
-		skey := keyFrom(k)
-		c.Insert(skey, V(k))
-		if v < 1 {
+		c.Insert(k, v)
+
+		freq := freqs[k]
+		if freq < 1 {
 			panic("an item can't have a frequency < 1")
 		}
-		for i := 1; i < v; i++ {
-			c.Fetch(skey)
+		for i := 1; i < freq; i++ {
+			c.Fetch(k)
 		}
 	}
 	return c
 }
 
 func BenchmarkInsert(b *testing.B) {
-	c := NewCache()
+	c := NewCache[int, int]()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		c.Insert(T(n), V(n))
+		c.Insert(n, n)
 	}
 }
 
 func benchmarkFetch(nitems int, hit bool) func(b *testing.B) {
 	return func(b *testing.B) {
-		var key T
+		var key int
 		if hit {
-			key = T(0)
+			key = 0
 		} else {
-			key = T(nitems)
+			key = nitems
 		}
 
-		c := NewCache()
+		c := NewCache[int, int]()
 		for i := 0; i < nitems; i++ {
-			c.Insert(T(i), V(i))
+			c.Insert(i, i)
 		}
 
 		b.ReportAllocs()
@@ -343,9 +337,9 @@ func BenchmarkFetch(b *testing.B) {
 }
 
 func BenchmarkEvict(b *testing.B) {
-	c := NewCache()
+	c := NewCache[int, int]()
 	for i := 0; i < b.N; i++ {
-		c.Insert(T(i), V(i))
+		c.Insert(i, i)
 	}
 
 	b.ReportAllocs()

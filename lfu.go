@@ -1,41 +1,35 @@
 package fastlfu
 
-/* https://arxiv.org/pdf/2110.11602.pdf
- *
- */
+/* https://arxiv.org/pdf/2110.11602.pdf */
 
-type T int
+type set[K comparable] map[K]struct{}
 
-type V int
-
-type set map[T]struct{}
-
-type Cache struct {
-	bykey    map[T]*lfuItem
-	freqhead *freqNode
+type Cache[K comparable, V any] struct {
+	bykey    map[K]*lfuItem[K, V]
+	freqhead *freqNode[K]
 }
 
-type lfuItem struct {
+type lfuItem[K comparable, V any] struct {
 	data   V
-	parent *freqNode // points back to the first node in the frequency list containing this lfuItem.
+	parent *freqNode[K] // points back to the first node in the frequency list containing this lfuItem.
 }
 
-func NewCache() *Cache {
+func NewCache[K comparable, V any]() *Cache[K, V] {
 	// Initialize the first frequency list.
-	node := &freqNode{
-		items: make(set),
+	node := &freqNode[K]{
+		items: make(set[K]),
 	}
 	node.prev = node
 	node.next = node
 
-	return &Cache{
-		bykey:    make(map[T]*lfuItem),
+	return &Cache[K, V]{
+		bykey:    make(map[K]*lfuItem[K, V]),
 		freqhead: node,
 	}
 }
 
 // Len returns the number of elements in the cache.
-func (c *Cache) Len() int {
+func (c *Cache[K, V]) Len() int {
 	return len(c.bykey)
 }
 
@@ -43,7 +37,7 @@ func (c *Cache) Len() int {
 // least frequently used items, and returns that item and a boolean equals to
 // true. If the cache is empty and no item can be evicted, Evict returns the
 // zero-value of T and false.
-func (c *Cache) Evict() (T, bool) {
+func (c *Cache[K, V]) Evict() (K, bool) {
 	for k := range c.freqhead.next.items {
 		item := c.bykey[k]
 		if len(c.freqhead.next.items) == 1 {
@@ -55,14 +49,14 @@ func (c *Cache) Evict() (T, bool) {
 		return k, true
 	}
 
-	var t T
-	return t, false
+	var k K
+	return k, false
 }
 
 // EvictMultiple evicts up to n items from the cache, randomly chosen among the
 // least frequently used items, and returns the number of items actually
 // evicted.
-func (c *Cache) EvictMultiple(n int) int {
+func (c *Cache[K, V]) EvictMultiple(n int) int {
 	evicted := 0
 
 	cur := c.freqhead.next
@@ -93,7 +87,7 @@ func (c *Cache) EvictMultiple(n int) int {
 08 freq.items.add(key)
 09 lfu cache.bykey[key] ← NEW-LFU-ITEM(value, freq)
 */
-func (c *Cache) Insert(key T, value V) {
+func (c *Cache[K, V]) Insert(key K, value V) {
 	_, ok := c.bykey[key]
 	if ok {
 		// TODO(arl) we shouldn't panic but probably just Fetch the item, and replace its value.
@@ -106,7 +100,7 @@ func (c *Cache) Insert(key T, value V) {
 	}
 
 	freq.items[key] = struct{}{}
-	c.bykey[key] = &lfuItem{
+	c.bykey[key] = &lfuItem[K, V]{
 		data:   value,
 		parent: freq,
 	}
@@ -134,7 +128,7 @@ func (c *Cache) Insert(key T, value V) {
 // Fetch fetches the value associated with key and returns it, with true, and
 // increments its access frequency. However if there's no such key in the cache,
 // it returns the zero value of the value type and false.
-func (c *Cache) Fetch(key T) (V, bool) {
+func (c *Cache[K, V]) Fetch(key K) (V, bool) {
 	tmp := c.bykey[key]
 	if tmp == nil {
 		var v V
@@ -159,16 +153,16 @@ func (c *Cache) Fetch(key T) (V, bool) {
 
 // a freqNode is a node in the 'frequency list', it holds the items having the
 // same frequency (i.e. items with the same number of accesses).
-type freqNode struct {
-	next, prev *freqNode // fequency list neighbour nodes.
-	items      set       // items
-	freq       uint64    // number of accesses
+type freqNode[T comparable] struct {
+	next, prev *freqNode[T] // fequency list neighbour nodes.
+	items      set[T]       // items
+	freq       uint64       // number of accesses
 }
 
 // newNode creates a new frequency node and inserts it between prev and freq.
-func newNode(v uint64, prev, next *freqNode) *freqNode {
-	n := &freqNode{
-		items: make(set),
+func newNode[T comparable](v uint64, prev, next *freqNode[T]) *freqNode[T] {
+	n := &freqNode[T]{
+		items: make(set[T]),
 		freq:  v,
 		prev:  prev,
 		next:  next,
@@ -179,7 +173,7 @@ func newNode(v uint64, prev, next *freqNode) *freqNode {
 }
 
 // unlink unlinks n from its own frequency list.
-func (n *freqNode) unlink() {
+func (n *freqNode[T]) unlink() {
 	n.prev.next = n.next
 	n.next.prev = n.prev
 }
