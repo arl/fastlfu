@@ -88,6 +88,7 @@ func testEvict(t *testing.T, nitems int) {
 }
 
 func TestInsert(t *testing.T) {
+	const marker = "-reinserted"
 	items := map[int]string{
 		0: "A",
 		1: "B",
@@ -102,9 +103,9 @@ func TestInsert(t *testing.T) {
 
 	// Change the value before fetching.
 	for k := 0; k < 4; k++ {
-		c.Insert(k, items[k]+"reinserted")
+		c.Insert(k, items[k]+marker)
 		vf, ok := c.Fetch(k)
-		want := items[k] + "reinserted"
+		want := items[k] + marker
 		if want != vf {
 			t.Errorf("Fetch(%v) = (%v, %t), want (%v, %t)", k, vf, ok, want, ok)
 		}
