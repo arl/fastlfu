@@ -324,16 +324,17 @@ func benchmarkFetch(nitems int, hit bool) func(b *testing.B) {
 }
 
 func BenchmarkFetch(b *testing.B) {
-	b.Run("items=10/fetch=hit", benchmarkFetch(10, true))
-	b.Run("items=10/fetch=miss", benchmarkFetch(10, false))
-	b.Run("items=100/fetch=hit", benchmarkFetch(100, true))
-	b.Run("items=100/fetch=miss", benchmarkFetch(100, false))
-	b.Run("items=1000/fetch=hit", benchmarkFetch(1000, true))
-	b.Run("items=1000/fetch=miss", benchmarkFetch(1000, false))
-	b.Run("items=10000/fetch=hit", benchmarkFetch(10000, true))
-	b.Run("items=10000/fetch=miss", benchmarkFetch(10000, false))
-	b.Run("items=100000/fetch=hit", benchmarkFetch(100000, true))
-	b.Run("items=100000/fetch=miss", benchmarkFetch(100000, false))
+	b.Run("fetch=hit/items=10", benchmarkFetch(10, true))
+	b.Run("fetch=hit/items=100", benchmarkFetch(100, true))
+	b.Run("fetch=hit/items=1000", benchmarkFetch(1000, true))
+	b.Run("fetch=hit/items=10000", benchmarkFetch(10000, true))
+	b.Run("fetch=hit/items=100000", benchmarkFetch(100000, true))
+
+	b.Run("fetch=miss/items=10", benchmarkFetch(10, false))
+	b.Run("fetch=miss/items=100", benchmarkFetch(100, false))
+	b.Run("fetch=miss/items=1000", benchmarkFetch(1000, false))
+	b.Run("fetch=miss/items=10000", benchmarkFetch(10000, false))
+	b.Run("fetch=miss/items=100000", benchmarkFetch(100000, false))
 }
 
 func BenchmarkEvict(b *testing.B) {
