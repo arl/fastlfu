@@ -87,6 +87,36 @@ func testEvict(t *testing.T, nitems int) {
 	}
 }
 
+func TestInsert(t *testing.T) {
+	items := map[int]string{
+		0: "A",
+		1: "B",
+		2: "C",
+		3: "D",
+		4: "E",
+	}
+	c := NewCache[int, string]()
+	for k, v := range items {
+		c.Insert(k, v)
+	}
+
+	// Change the value before fetching.
+	for k := 0; k < 4; k++ {
+		c.Insert(k, items[k]+"reinserted")
+		vf, ok := c.Fetch(k)
+		want := items[k] + "reinserted"
+		if want != vf {
+			t.Errorf("Fetch(%v) = (%v, %t), want (%v, %t)", k, vf, ok, want, ok)
+		}
+	}
+
+	// Ensure we evict the only key we hadn't fetched.
+	evicted, ok := c.Evict()
+	if evicted != 4 {
+		t.Errorf("evicted = (%v, %t), want (4, ok)", evicted, ok)
+	}
+}
+
 func TestEvict(t *testing.T) {
 	testEvict(t, 100)
 }
@@ -271,7 +301,7 @@ func (c *Cache[K, V]) items() map[K]V {
 	return m
 }
 
-// items is a map key is the cache key and value frequency.
+// items is a map of key, which values are the key access frequency.
 func buildCache[K comparable, V any](items map[K]V, freqs map[K]int) *Cache[K, V] {
 	c := NewCache[K, V]()
 	for k, v := range items {

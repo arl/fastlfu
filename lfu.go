@@ -103,14 +103,13 @@ func (c *Cache[K, V]) EvictMultiple(n int) int {
 	return evicted
 }
 
-// Insert a key value pair in the cache.
-// NOTE: for now this panics if the key already exist.
+// Insert a key value pair in the cache. If key already is in the cache, its
+// value is replaced by value, but its access frequency isn't changed.
 func (c *Cache[K, V]) Insert(key K, value V) {
-	_, ok := c.bykey[key]
+	item, ok := c.bykey[key]
 	if ok {
-		// TODO(arl) we shouldn't panic but probably just Fetch the item, and
-		// replace its value.
-		panic("Insert: key already exists")
+		item.data = value
+		return
 	}
 
 	freq := c.freqhead.next
@@ -129,24 +128,24 @@ func (c *Cache[K, V]) Insert(key K, value V) {
 // increments its access frequency. However if there's no such key in the cache,
 // it returns the zero value of the value type and false.
 func (c *Cache[K, V]) Fetch(key K) (V, bool) {
-	tmp := c.bykey[key]
-	if tmp == nil {
+	item := c.bykey[key]
+	if item == nil {
 		var v V
 		return v, false
 	}
-	freq := tmp.parent
+	freq := item.parent
 	nextFreq := freq.next
 
 	if nextFreq == c.freqhead || nextFreq.freq != freq.freq+1 {
 		nextFreq = newNode(freq.freq+1, freq, nextFreq)
 	}
 	nextFreq.items[key] = struct{}{}
-	tmp.parent = nextFreq
+	item.parent = nextFreq
 
 	delete(freq.items, key)
 	if len(freq.items) == 0 {
 		freq.unlink()
 	}
 
-	return tmp.data, true
+	return item.data, true
 }
