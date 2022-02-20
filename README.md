@@ -1,5 +1,8 @@
 # fastLFU implementation
 
+
+:warning: `fastlfu` is under active developement, its API is not stable, you should not use in production as long as there's this message :exclamation:
+
 This is a Go 1.18 implementation of the **fastLFU** (Least Frequently Used)
 cache eviction scheme, described in a 2021 [paper](https://arxiv.org/pdf/2110.11602v1.pdf)
 by Dhruv Matani, Ketan Shah and Anirban Mitra called _An O(1) algorithm for implementing the LFU cache eviction scheme_.
