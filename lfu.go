@@ -1,7 +1,5 @@
 package fastlfu
 
-/* https://arxiv.org/pdf/2110.11602.pdf */
-
 type set[K comparable] map[K]struct{}
 
 // a freqNode is a node in the 'frequency list', it holds the items having the
@@ -41,7 +39,7 @@ type lfuItem[K comparable, V any] struct {
 	parent *freqNode[K] // points back to the first node in the frequency list containing this lfuItem.
 }
 
-func NewCache[K comparable, V any]() *Cache[K, V] {
+func New[K comparable, V any]() *Cache[K, V] {
 	// Initialize the first frequency list.
 	node := &freqNode[K]{
 		items: make(set[K]),

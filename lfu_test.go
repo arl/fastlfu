@@ -7,7 +7,7 @@ import (
 )
 
 func TestFastLFU(t *testing.T) {
-	c := NewCache[int, int]()
+	c := New[int, int]()
 
 	for i := 0; i < 10; i++ {
 		c.Insert(i, i)
@@ -44,7 +44,7 @@ func TestFastLFU(t *testing.T) {
 }
 
 func testEvict(t *testing.T, nitems int) {
-	c := NewCache[int, int]()
+	c := New[int, int]()
 
 	for i := 0; i < nitems; i++ {
 		c.Insert(i, i)
@@ -96,7 +96,7 @@ func TestInsert(t *testing.T) {
 		3: "D",
 		4: "E",
 	}
-	c := NewCache[int, string]()
+	c := New[int, string]()
 	for k, v := range items {
 		c.Insert(k, v)
 	}
@@ -124,7 +124,7 @@ func TestEvict(t *testing.T) {
 
 func testEvictSameFrequencies(nitems int) func(t *testing.T) {
 	return func(t *testing.T) {
-		c := NewCache[int, int]()
+		c := New[int, int]()
 		for i := 0; i < nitems; i++ {
 			c.Insert(i, i)
 		}
@@ -304,7 +304,7 @@ func (c *Cache[K, V]) items() map[K]V {
 
 // items is a map of key, which values are the key access frequency.
 func buildCache[K comparable, V any](items map[K]V, freqs map[K]int) *Cache[K, V] {
-	c := NewCache[K, V]()
+	c := New[K, V]()
 	for k, v := range items {
 		c.Insert(k, v)
 
@@ -320,7 +320,7 @@ func buildCache[K comparable, V any](items map[K]V, freqs map[K]int) *Cache[K, V
 }
 
 func BenchmarkInsert(b *testing.B) {
-	c := NewCache[int, int]()
+	c := New[int, int]()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -337,7 +337,7 @@ func benchmarkFetch(nitems int, hit bool) func(b *testing.B) {
 			key = nitems
 		}
 
-		c := NewCache[int, int]()
+		c := New[int, int]()
 		for i := 0; i < nitems; i++ {
 			c.Insert(i, i)
 		}
@@ -369,7 +369,7 @@ func BenchmarkFetch(b *testing.B) {
 }
 
 func BenchmarkEvict(b *testing.B) {
-	c := NewCache[int, int]()
+	c := New[int, int]()
 	for i := 0; i < b.N; i++ {
 		c.Insert(i, i)
 	}
