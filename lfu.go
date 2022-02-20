@@ -1,5 +1,7 @@
 package fastlfu
 
+import "math"
+
 type set[K comparable] map[K]struct{}
 
 // a freqNode is a node in the 'frequency list', it holds the items having the
@@ -37,7 +39,7 @@ type lfuItem[K comparable, V any] struct {
 type Cache[K comparable, V any] struct {
 	bykey    map[K]*lfuItem[K, V]
 	freqhead *freqNode[K]
-	maxed    bool
+	maxkeys  uint64
 }
 
 func New[K comparable, V any]() *Cache[K, V] {
@@ -51,12 +53,13 @@ func New[K comparable, V any]() *Cache[K, V] {
 	return &Cache[K, V]{
 		bykey:    make(map[K]*lfuItem[K, V]),
 		freqhead: node,
+		maxkeys:  math.MaxInt64,
 	}
 }
 
-func NewMaxed[K comparable, V any]() *Cache[K, V] {
+func NewMaxed[K comparable, V any](max uint64) *Cache[K, V] {
 	c := New[K, V]()
-	c.maxed = true
+	c.maxkeys = max
 	return c
 }
 
@@ -118,7 +121,7 @@ func (c *Cache[K, V]) Insert(key K, value V) {
 	}
 
 	// If we're a maxed cache, we need to evict before inserting a new pair.
-	if c.maxed {
+	if c.maxkeys == uint64(c.Len()) {
 		c.Evict()
 	}
 

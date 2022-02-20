@@ -242,7 +242,8 @@ func TestEvictMultiple(t *testing.T) {
 func testEvictMultiple(t *testing.T, tt evictMultipleTestCase) {
 	t.Helper()
 
-	c := buildCache(tt.freqs, tt.freqs)
+	c := New[int, int]()
+	fillCache(c, tt.freqs, tt.freqs)
 	evicted := c.EvictMultiple(tt.nevictions)
 
 	if evicted != tt.wantEvicted {
@@ -303,8 +304,7 @@ func (c *Cache[K, V]) items() map[K]V {
 }
 
 // items is a map of key, which values are the key access frequency.
-func buildCache[K comparable, V any](items map[K]V, freqs map[K]int) *Cache[K, V] {
-	c := New[K, V]()
+func fillCache[K comparable, V any](c *Cache[K, V], items map[K]V, freqs map[K]int) {
 	for k, v := range items {
 		c.Insert(k, v)
 
@@ -316,5 +316,30 @@ func buildCache[K comparable, V any](items map[K]V, freqs map[K]int) *Cache[K, V
 			c.Fetch(k)
 		}
 	}
-	return c
+}
+
+func TestMaxedCache(t *testing.T) {
+	freqs := map[int]int{
+		1: 3,
+		2: 3,
+		3: 3,
+		4: 2,
+		5: 1,
+	}
+	c := NewMaxed[int, int](5)
+	fillCache(c, freqs, freqs)
+
+	if got := c.Len(); got != 5 {
+		t.Fatalf("c.Len() = %d, want 5", got)
+	}
+
+	c.Insert(1, 0)
+	if got := c.Len(); got != 5 {
+		t.Fatalf("c.Len() = %d, want 5", got)
+	}
+
+	c.Insert(6, 0)
+	if got := c.Len(); got != 5 {
+		t.Fatalf("c.Len() = %d, want 5", got)
+	}
 }
