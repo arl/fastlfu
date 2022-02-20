@@ -29,14 +29,15 @@ func (n *freqNode[T]) unlink() {
 	n.next.prev = n.prev
 }
 
-type Cache[K comparable, V any] struct {
-	bykey    map[K]*lfuItem[K, V]
-	freqhead *freqNode[K]
-}
-
 type lfuItem[K comparable, V any] struct {
 	data   V
 	parent *freqNode[K] // points back to the first node in the frequency list containing this lfuItem.
+}
+
+type Cache[K comparable, V any] struct {
+	bykey    map[K]*lfuItem[K, V]
+	freqhead *freqNode[K]
+	maxed    bool
 }
 
 func New[K comparable, V any]() *Cache[K, V] {
@@ -51,6 +52,12 @@ func New[K comparable, V any]() *Cache[K, V] {
 		bykey:    make(map[K]*lfuItem[K, V]),
 		freqhead: node,
 	}
+}
+
+func NewMaxed[K comparable, V any]() *Cache[K, V] {
+	c := New[K, V]()
+	c.maxed = true
+	return c
 }
 
 // Len returns the number of elements in the cache.
@@ -108,6 +115,11 @@ func (c *Cache[K, V]) Insert(key K, value V) {
 	if ok {
 		item.data = value
 		return
+	}
+
+	// If we're a maxed cache, we need to evict before inserting a new pair.
+	if c.maxed {
+		c.Evict()
 	}
 
 	freq := c.freqhead.next
