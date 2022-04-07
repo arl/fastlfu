@@ -1,7 +1,7 @@
 # fastLFU implementation
 
 
-:warning: `fastlfu` is under active developement, its API is not stable, you should not use in production as long as there's this message :exclamation:
+:warning: `fastlfu` is still under developement, the API might not be stable yet, you should not use in production :exclamation:
 
 This is a Go 1.18 implementation of the **fastLFU** (Least Frequently Used)
 cache eviction scheme, described in a 2021 [paper](https://arxiv.org/pdf/2110.11602v1.pdf)
