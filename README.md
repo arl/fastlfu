@@ -37,26 +37,31 @@ Each time we fetch a value associated from a key, we increment the key
 frequency:
 
 ```go
-    v1, ok1 := c.Fetch(0) // "foo", true
-    v2, ok1 := c.Fetch(1) // "bar", true
+    v1, ok1 := c.Fetch(0)
+    // returns "foo", true
+
+    v2, ok1 := c.Fetch(1)
+    // returns "bar", true
 ```
 
 If we call `Fetch` with a key that is not present, we get the zero-value of the
 value type, and false:
 
 ```go
-    v, ok := c.Fetch(12345678) // "", false
+    v, ok := c.Fetch(12345678)
+    // returns "", false
 ```
 
 After these calls, the `(0, "foo")` and `(1, "bar")` key-value pairs have been
 more frequently used than `(2, "baz").`
 
 So if we require the cache to evict the least frequently used value, it's going
-to be `"baz"`.  `Evict` also returns a boolean indicating if an eviction has
+to be `"baz"`.  `Evict` also returns a boolean indicating if any eviction has
 been performed. 
 
 ```go
-    v, ok := c.Evict(0) // "baz", true
+    v, ok := c.Evict(0)
+    // returns "baz", true
 ```
 
 NOTE: `Evict` is guaranteed to succeed unless the `Cache` is empty.
@@ -65,7 +70,8 @@ If we call `Evict` again, we can't predict they key-value pair that is going to
 be evicted because the remaining pairs have the same frequency.
 
 ```go
-    v, ok := c.Evict(0) // either ("foo", true) or ("bar", true)
+    v, ok := c.Evict(0)
+    // returns either ("foo", true) or ("bar", true)
 ```
 
 ## Performance
