@@ -1,4 +1,4 @@
-# fastLFU implementation
+# fastLFU cache
 
 
 :warning: `fastlfu` is still under developement, the API might not be stable yet, you should not use in production :exclamation:
