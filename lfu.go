@@ -4,6 +4,23 @@ import "math"
 
 type set[K comparable] map[K]struct{}
 
+func (s set[K]) add(v K) {
+	s[v] = struct{}{}
+}
+
+func (s set[K]) contains(v K) bool {
+	_, ok := s[v]
+	return ok
+}
+
+func (s set[K]) delete(v K) {
+	delete(s, v)
+}
+
+func (s set[K]) len() int {
+	return len(s)
+}
+
 // a freqNode is a node in the 'frequency list', it holds the items having the
 // same frequency (i.e. items with the same number of accesses).
 type freqNode[T comparable] struct {
@@ -75,12 +92,12 @@ func (c *Cache[K, V]) Len() int {
 func (c *Cache[K, V]) Evict() (K, bool) {
 	for k := range c.freqhead.next.items {
 		item := c.bykey[k]
-		if len(c.freqhead.next.items) == 1 {
+		if c.freqhead.next.items.len() == 1 {
 			// No other elements having the current frequency
 			item.parent.unlink()
 		}
 		delete(c.bykey, k)
-		delete(c.freqhead.next.items, k)
+		c.freqhead.next.items.delete( k)
 		return k, true
 	}
 
@@ -130,7 +147,7 @@ func (c *Cache[K, V]) Insert(key K, value V) {
 		freq = newNode(1, c.freqhead, freq)
 	}
 
-	freq.items[key] = struct{}{}
+	freq.items.add(key)
 	c.bykey[key] = &lfuItem[K, V]{
 		data:   value,
 		parent: freq,
@@ -152,11 +169,11 @@ func (c *Cache[K, V]) Fetch(key K) (V, bool) {
 	if nextFreq == c.freqhead || nextFreq.freq != freq.freq+1 {
 		nextFreq = newNode(freq.freq+1, freq, nextFreq)
 	}
-	nextFreq.items[key] = struct{}{}
+	nextFreq.items.add(key)
 	item.parent = nextFreq
 
-	delete(freq.items, key)
-	if len(freq.items) == 0 {
+	freq.items.delete( key)
+	if freq.items.len() == 0 {
 		freq.unlink()
 	}
 
