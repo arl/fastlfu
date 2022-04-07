@@ -78,4 +78,4 @@ be evicted because the remaining pairs have the same frequency.
 
 TODO
 
-## [MIT LICENSE](./LICENSE.md)
+## [MIT LICENSE](./LICENSE)
