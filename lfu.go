@@ -49,8 +49,10 @@ func (n *freqNode[T]) unlink() {
 }
 
 type lfuItem[K comparable, V any] struct {
-	data   V
-	parent *freqNode[K] // points back to the first node in the frequency list containing this lfuItem.
+	data V
+	// points back to the first node in the frequency list
+	// containing this lfuItem.
+	parent *freqNode[K]
 }
 
 type Cache[K comparable, V any] struct {
