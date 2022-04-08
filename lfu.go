@@ -97,12 +97,11 @@ func (c *Cache[K, V]) Evict() (K, bool) {
 			item.parent.unlink()
 		}
 		delete(c.bykey, k)
-		c.freqhead.next.items.delete( k)
+		c.freqhead.next.items.delete(k)
 		return k, true
 	}
 
-	var k K
-	return k, false
+	return *new(K), false
 }
 
 // EvictMultiple evicts up to n items from the cache, randomly chosen among the
@@ -160,8 +159,7 @@ func (c *Cache[K, V]) Insert(key K, value V) {
 func (c *Cache[K, V]) Fetch(key K) (V, bool) {
 	item := c.bykey[key]
 	if item == nil {
-		var v V
-		return v, false
+		return *new(V), false
 	}
 	freq := item.parent
 	nextFreq := freq.next
@@ -172,7 +170,7 @@ func (c *Cache[K, V]) Fetch(key K) (V, bool) {
 	nextFreq.items.add(key)
 	item.parent = nextFreq
 
-	freq.items.delete( key)
+	freq.items.delete(key)
 	if freq.items.len() == 0 {
 		freq.unlink()
 	}
