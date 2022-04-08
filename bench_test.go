@@ -69,3 +69,25 @@ func BenchmarkEvict(b *testing.B) {
 		}
 	}
 }
+
+var sink interface{}
+
+func BenchmarkFetchLastNodeItem(b *testing.B) {
+	// Test the case where the fetched item is the last on its frequency node,
+	// and the next (+1) node doesn't exist.
+	c := New[int, string]()
+	c.Insert(1, "foo")
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	var (
+		val string
+		ok  bool
+	)
+	for n := 0; n < b.N; n++ {
+		val, ok = c.Fetch(1)
+	}
+
+	sink, sink = val, ok
+}

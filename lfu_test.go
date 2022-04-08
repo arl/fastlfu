@@ -343,3 +343,21 @@ func TestMaxedCache(t *testing.T) {
 		t.Fatalf("c.Len() = %d, want 5", got)
 	}
 }
+
+func TestFetchLastNodeItem(t *testing.T) {
+	// Test the case where the fetched item is the last on its frequency node,
+	// and the next (+1) node doesn't exist.
+	c := New[int, string]()
+	c.Insert(1, "foo")
+	if val, ok := c.Fetch(1); val != "foo" || !ok {
+		t.Errorf("fetched(1) -> (%v, %v), want (%v, %v)", val, ok, "foo", true)
+	}
+
+	if val, ok := c.Fetch(1); val != "foo" || !ok {
+		t.Errorf("fetched(1) -> (%v, %v), want (%v, %v)", val, ok, "foo", true)
+	}
+
+	if val, ok := c.Fetch(1); val != "foo" || !ok {
+		t.Errorf("fetched(1) -> (%v, %v), want (%v, %v)", val, ok, "foo", true)
+	}
+}

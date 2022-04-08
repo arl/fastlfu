@@ -166,6 +166,14 @@ func (c *Cache[K, V]) Fetch(key K) (V, bool) {
 	freq := item.parent
 	nextFreq := freq.next
 
+	if freq.items.len() == 1 && nextFreq.freq != freq.freq+1 {
+		// Special case: item is the only one of its frequency
+		// and next frequency node (+1) doesn't exist, we simply
+		// bump the frequency.
+		freq.freq++
+		return item.data, true
+	}
+
 	if nextFreq == c.freqhead || nextFreq.freq != freq.freq+1 {
 		nextFreq = newNode(freq.freq+1, freq, nextFreq)
 	}
